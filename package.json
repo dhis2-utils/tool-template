@@ -1,7 +1,7 @@
 {
   "name": "tool-template",
   "description": "Template for basic DHIS2 tools",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "dependencies": {},
   "devDependencies": {
     "@eslint/js": "^10.0.1",
