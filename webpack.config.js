@@ -65,7 +65,7 @@ module.exports = (env = {}) => {
         devtool: "source-map",
         output: {
             path: __dirname + "/build",
-            filename: "[name]-[hash].js",
+            filename: "[name]-[contenthash].js",
             publicPath: isDevBuild ? "http://localhost:8081/" : "./"
         },
         module: {
@@ -80,15 +80,17 @@ module.exports = (env = {}) => {
                 },
                 {
                     test: /\.png$/,
-                    use: ["url-loader?limit=100000"]
+                    type: "asset",
+                    parser: { dataUrlCondition: { maxSize: 100000 } }
                 },
                 {
                     test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-                    use: ["url-loader?limit=10000&mimetype=application/font-woff"]
+                    type: "asset",
+                    parser: { dataUrlCondition: { maxSize: 10000 } }
                 },
                 {
                     test: /\.(ttf|otf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?|(jpg|gif)$/,
-                    use: ["file-loader"]
+                    type: "asset/resource"
                 },
             ]
         },
