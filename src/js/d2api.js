@@ -24,7 +24,6 @@ const formatEndpoint = (endpoint) => {
     }
 
     // Ensure the final format is /api/...
-    // Ensure the final format is /api/...
     return `/api/${endpoint}`;
 };
 
@@ -38,11 +37,13 @@ const validateUID = (endpoint) => {
 // Helper function to handle API errors and throw detailed error messages
 const handleApiError = async (response) => {
     let errorMessage = "Network response was not ok";
-    let errorDetail = await response.json(); // Capture the error response body text
-
-    errorMessage = errorDetail.message || errorMessage;
-
-    throw new Error(`${response.statusText} - ${errorMessage}`);
+    try {
+        const errorDetail = await response.json();
+        errorMessage = errorDetail.message || errorMessage;
+    } catch {
+        errorMessage = response.statusText || errorMessage;
+    }
+    throw new Error(`${response.status} ${response.statusText} - ${errorMessage}`);
 };
 
 // GET from API async
@@ -151,7 +152,12 @@ export function d2PostThenGet(endpoint) {
             method: "POST",
             headers: getHeaders(),
         })
-            .then(response => response.json())
+            .then(async response => {
+                if (!response.ok) {
+                    await handleApiError(response);
+                }
+                return response.json();
+            })
             .then(() => {
                 let tries = 0;
 
@@ -160,7 +166,12 @@ export function d2PostThenGet(endpoint) {
                         method: "GET",
                         headers: getHeaders(),
                     })
-                        .then(response => response.json())
+                        .then(async response => {
+                            if (!response.ok) {
+                                await handleApiError(response);
+                            }
+                            return response.json();
+                        })
                         .then(getData => {
                             if (Object.keys(getData).length > 0 || tries >= 10) {
                                 resolve(getData);
