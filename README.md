@@ -6,7 +6,7 @@ Basic DHIS2 app for simple tools.
 
 
 ## License
-© Copyright University of Oslo 2024
+© Copyright University of Oslo 2026
 
 
 ## Getting started
