@@ -23,10 +23,10 @@
     "build": "webpack --progress",
     "lint": "eslint src",
     "manifest": "d2-manifest package.json build/manifest.webapp",
-    "postbuild": "npm run manifest",
-    "prebuild": "rm -rf build && npm run lint",
+    "postbuild": "yarn manifest",
+    "prebuild": "rm -rf build && yarn lint",
     "start": "d2-manifest package.json manifest.webapp && webpack-dev-server",
-    "zip": "rm -rf compiled && npm run build && mkdir compiled && cd build && zip -r ../compiled/$npm_package_name.zip *"
+    "zip": "rm -rf compiled && yarn build && mkdir compiled && cd build && zip -r ../compiled/$npm_package_name.zip *"
   },
   "manifest.webapp": {
     "developer": {
