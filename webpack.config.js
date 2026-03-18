@@ -5,12 +5,20 @@ const webpack = require("webpack");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HTMLWebpackPlugin = require("html-webpack-plugin");
 
+require("dotenv").config();
 var dhisConfig;
-try {
-    dhisConfig = require("./d2auth.json");
-    dhisConfig.authorization = `Basic ${Buffer.from(`${dhisConfig.username}:${dhisConfig.password}`).toString("base64")}`;
-} catch (e) {
-    console.warn("\nWARNING! Failed to load DHIS config:", e.message);
+if (process.env.DHIS2_BASE_URL) {
+    dhisConfig = { baseUrl: process.env.DHIS2_BASE_URL };
+    if (process.env.DHIS2_API_TOKEN) {
+        dhisConfig.authorization = `ApiToken ${process.env.DHIS2_API_TOKEN}`;
+    } else if (process.env.DHIS2_USERNAME && process.env.DHIS2_PASSWORD) {
+        dhisConfig.authorization = `Basic ${Buffer.from(`${process.env.DHIS2_USERNAME}:${process.env.DHIS2_PASSWORD}`).toString("base64")}`;
+    } else {
+        console.warn("\nWARNING! DHIS2_BASE_URL is set but no credentials found. Set DHIS2_API_TOKEN or DHIS2_USERNAME+DHIS2_PASSWORD in .env");
+        dhisConfig.authorization = "";
+    }
+} else {
+    console.warn("\nWARNING! No .env file found or DHIS2_BASE_URL not set. Using default localhost config.");
     dhisConfig = {
         baseUrl: "http://localhost:8080/dhis",
         authorization: "Basic YWRtaW46ZGlzdHJpY3Q=", // admin:district

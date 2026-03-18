@@ -17,7 +17,8 @@ This is a DHIS2 web application built from the tool-template. It is a simple, va
 - Do not introduce React, Vue, or other frameworks - keep it vanilla JS
 - Do not replace the webpack build with Vite or other tools
 - All API calls must use the helpers in `src/js/d2api.js`
-- Do not hardcode DHIS2 URLs or credentials in source files
+- Do not hardcode DHIS2 URLs or credentials in source files — credentials go in `.env` (gitignored)
+- Auth config: copy `.env.template` to `.env`; supports `DHIS2_API_TOKEN` (PAT, recommended) or `DHIS2_USERNAME`+`DHIS2_PASSWORD` (Basic Auth)
 - Keep the app simple - these tools are for admin tasks, not end-user applications
 - Preserve the `d2-manifest` post-build step that generates `manifest.webapp`
 - ESLint config: 4-space indent, double quotes, semicolons

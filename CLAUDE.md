@@ -25,9 +25,16 @@ src/
 
 ## Auth Configuration
 
-Copy `d2auth.template.json` to `d2auth.json` with your DHIS2 instance URL, username, and password. Default: `http://localhost:8080/dhis` with `admin:district`.
+Copy `.env.template` to `.env` and fill in the values. Supports two auth methods (token takes priority):
 
-`d2auth.json` is gitignored - never commit credentials.
+```
+DHIS2_BASE_URL=http://localhost:8080/dhis
+DHIS2_API_TOKEN=your_token        # Personal Access Token (DHIS2 2.38+, recommended)
+DHIS2_USERNAME=admin              # Basic Auth fallback
+DHIS2_PASSWORD=district
+```
+
+`.env` is gitignored — never commit credentials.
 
 ## Key Conventions
 

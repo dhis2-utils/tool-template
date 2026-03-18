@@ -5,8 +5,8 @@ const baseUrl = isDev ? dhisDevConfig.baseUrl : "../../..";
 // Helper function to set headers for development mode
 const getHeaders = () => {
     let headers = new Headers();
-    if (isDev) {
-        headers.set("Authorization", "Basic " + btoa(dhisDevConfig.username + ":" + dhisDevConfig.password));
+    if (isDev && dhisDevConfig.authorization) {
+        headers.set("Authorization", dhisDevConfig.authorization);
     }
     return headers;
 };
