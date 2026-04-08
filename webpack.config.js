@@ -5,12 +5,20 @@ const webpack = require("webpack");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HTMLWebpackPlugin = require("html-webpack-plugin");
 
+require("dotenv").config();
 var dhisConfig;
-try {
-    dhisConfig = require("./d2auth.json");  
-    dhisConfig.authorization = `Basic ${Buffer.from(`${dhisConfig.username}:${dhisConfig.password}`).toString("base64")}`;
-} catch (e) {
-    console.warn("\nWARNING! Failed to load DHIS config:", e.message);
+if (process.env.DHIS2_BASE_URL) {
+    dhisConfig = { baseUrl: process.env.DHIS2_BASE_URL };
+    if (process.env.DHIS2_API_TOKEN) {
+        dhisConfig.authorization = `ApiToken ${process.env.DHIS2_API_TOKEN}`;
+    } else if (process.env.DHIS2_USERNAME && process.env.DHIS2_PASSWORD) {
+        dhisConfig.authorization = `Basic ${Buffer.from(`${process.env.DHIS2_USERNAME}:${process.env.DHIS2_PASSWORD}`).toString("base64")}`;
+    } else {
+        console.warn("\nWARNING! DHIS2_BASE_URL is set but no credentials found. Set DHIS2_API_TOKEN or DHIS2_USERNAME+DHIS2_PASSWORD in .env");
+        dhisConfig.authorization = "";
+    }
+} else {
+    console.warn("\nWARNING! No .env file found or DHIS2_BASE_URL not set. Using default localhost config.");
     dhisConfig = {
         baseUrl: "http://localhost:8080/dhis",
         authorization: "Basic YWRtaW46ZGlzdHJpY3Q=", // admin:district
@@ -18,8 +26,6 @@ try {
 }
 
 const devServerPort = 8081;
-const isDevBuild = process.argv[1].indexOf("webpack-dev-server") !== -1;
-
 
 let cookie = ""; // Store cookie globally
 async function fetchSessionCookie() {
@@ -55,110 +61,94 @@ async function initialize() {
 }
 
 // Call the initialize function to start the process
-initialize();
-const webpackConfig = {
-    context: __dirname,
-    entry: "./src/app.js",
-    devtool: "source-map",
-    output: {
-        path: __dirname + "/build",
-        filename: "[name]-[hash].js",
-        publicPath: isDevBuild ? "http://localhost:8081/" : "./"
-    },
-    module: {
-        rules: [
-            {
-                test: /\.css$/,
-                use: ["style-loader", "css-loader"]
-            },
-            {
-                test: /\.scss$/,
-                use: ["style-loader", "css-loader", "sass-loader"]
-            },
-            {
-                test: /\.html$/,
-                use: ["html-loader"]
-            },
-            {
-                test: /\.png$/,
-                use: ["url-loader?limit=100000"]
-            },
-            {
-                test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-                use: ["url-loader?limit=10000&mimetype=application/font-woff"]
-            },
-            {
-                test: /\.(ttf|otf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?|(jpg|gif)$/,
-                use: ["file-loader"]
-            },
-            {
-                test: /\.js$/,
-                exclude: [
-                    path.resolve(__dirname, "node_modules"),
-                    path.resolve(__dirname, "src/resources/dhis-header-bar.js")
-                ]
-            }
-        ]
-    },
-    resolve: {
-        alias: {}
-    },
-    plugins: [
-        new HTMLWebpackPlugin({
-            template: "src/index.html"
-        }),
-        new CopyWebpackPlugin({
-            patterns: [
-                { from: "./src/css", to: "css" },
-                { from: "./src/img", to: "img" },
-                { from: "./src/resources/dhis-header-bar.js", to: "resources" }
+if (process.env.WEBPACK_SERVE) {
+    initialize();
+}
+
+module.exports = (env = {}) => {
+    const isDevBuild = Boolean(env.WEBPACK_SERVE);
+    const webpackConfig = {
+        context: __dirname,
+        entry: "./src/app.js",
+        devtool: "source-map",
+        output: {
+            path: __dirname + "/build",
+            filename: "[name]-[contenthash].js",
+            publicPath: isDevBuild ? "http://localhost:8081/" : "./"
+        },
+        module: {
+            rules: [
+                {
+                    test: /\.css$/,
+                    use: ["style-loader", "css-loader"]
+                },
+                {
+                    test: /\.html$/,
+                    use: ["html-loader"]
+                },
+                {
+                    test: /\.png$/,
+                    type: "asset",
+                    parser: { dataUrlCondition: { maxSize: 100000 } }
+                },
+                {
+                    test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+                    type: "asset",
+                    parser: { dataUrlCondition: { maxSize: 10000 } }
+                },
+                {
+                    test: /\.(ttf|otf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?|(jpg|gif)$/,
+                    type: "asset/resource"
+                },
             ]
-        }),
-        new webpack.ProvidePlugin({
-            $: "jquery",
-            jQuery: "jquery",
-            "window.jQuery": "jquery"
-        }),
-        !isDevBuild ? undefined : new webpack.DefinePlugin({
-            DHIS_CONFIG: JSON.stringify(dhisConfig),
-        }),
-        isDevBuild ? undefined : new webpack.DefinePlugin({
-            "process.env.NODE_ENV": "\"production\"",
-            DHIS_CONFIG: JSON.stringify({}),
-        }),
-    ].filter(v => v),
-    devServer: {
-        port: devServerPort,
-        compress: true,
-        proxy: [
-            {
-                context: () => true,
-                target: dhisConfig.baseUrl,
-                secure: false,
-                changeOrigin: true,
-                headers: {
-                    "Authorization": dhisConfig.authorization,
-                },
-                onProxyReq: (proxyReq) => {
-                    if (cookie) {
-                        proxyReq.setHeader("Cookie", cookie);
-                    } else {
-                        console.warn("No cookie found");
-                    }
-                },
-                onProxyRes: (proxyRes) => {
-                    const setCookieHeader = proxyRes.headers["set-cookie"];
-                    if (setCookieHeader) {
-                        const jsessionIdCookie = setCookieHeader.find(header => header.includes("JSESSIONID"));
-                        if (jsessionIdCookie) {
-                            cookie = jsessionIdCookie.split(";")[0];
+        },
+        plugins: [
+            new HTMLWebpackPlugin({
+                template: "src/index.html"
+            }),
+            new CopyWebpackPlugin({
+                patterns: [
+                    { from: "./src/css", to: "css" },
+                    { from: "./src/img", to: "img" },
+                    { from: "./src/resources/dhis-header-bar.js", to: "resources" }
+                ]
+            }),
+            new webpack.DefinePlugin({
+                DHIS_CONFIG: JSON.stringify(isDevBuild ? dhisConfig : {}),
+            }),
+        ],
+        devServer: {
+            port: devServerPort,
+            compress: true,
+            proxy: [
+                {
+                    context: () => true,
+                    target: dhisConfig.baseUrl,
+                    secure: false,
+                    changeOrigin: true,
+                    headers: {
+                        "Authorization": dhisConfig.authorization,
+                    },
+                    onProxyReq: (proxyReq) => {
+                        if (cookie) {
+                            proxyReq.setHeader("Cookie", cookie);
+                        } else {
+                            console.warn("No cookie found");
+                        }
+                    },
+                    onProxyRes: (proxyRes) => {
+                        const setCookieHeader = proxyRes.headers["set-cookie"];
+                        if (setCookieHeader) {
+                            const jsessionIdCookie = setCookieHeader.find(header => header.includes("JSESSIONID"));
+                            if (jsessionIdCookie) {
+                                cookie = jsessionIdCookie.split(";")[0];
+                            }
                         }
                     }
                 }
-            }
-        ]
-    },
-    mode: "development"
+            ]
+        },
+        mode: isDevBuild ? "development" : "production"
+    };
+    return webpackConfig;
 };
-
-module.exports = webpackConfig;

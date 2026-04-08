@@ -6,7 +6,7 @@ Basic DHIS2 app for simple tools.
 
 
 ## License
-© Copyright University of Oslo 2024
+© Copyright University of Oslo 2026
 
 
 ## Getting started
@@ -32,15 +32,21 @@ To start the webpack development server:
 yarn start
 ```
 
-By default, webpack will start on port 8081, and assumes DHIS2 is running on 
+By default, webpack will start on port 8081, and assumes DHIS2 is running on
 http://localhost:8080/dhis with `admin:district` as the user and password.
 
-A different DHIS2 instance can be used to develop against by adding a `d2auth.json` file like this:
+A different DHIS2 instance can be used to develop against by copying `.env.template` to `.env` and filling in the values:
 
 ```
-{
-    "baseUrl": "http://localhost:9000/dev",
-    "username": "john_doe",
-    "password": "District1!"
-}
+DHIS2_BASE_URL=http://localhost:9000/dev
+
+# Option 1: Personal Access Token (recommended for DHIS2 2.38+)
+# Create one in DHIS2 under: Profile → Edit profile → Personal access tokens
+DHIS2_API_TOKEN=your_token_here
+
+# Option 2: Username and password
+DHIS2_USERNAME=john_doe
+DHIS2_PASSWORD=District1!
 ```
+
+Token takes priority over username/password if both are set. `.env` is gitignored — never commit credentials.
