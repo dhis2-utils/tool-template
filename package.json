@@ -1,8 +1,14 @@
 {
   "name": "tool-template",
   "description": "Template for basic DHIS2 tools",
-  "version": "0.3.0",
+  "version": "0.4.0",
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {},
+  "resolutions": {
+    "lodash": "^4.17.23"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "copy-webpack-plugin": "^14.0.0",

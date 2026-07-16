@@ -7,3 +7,8 @@ node_modules
 bin
 d2auth.json
 .env
+.claude
+package-lock.json
+.DS_Store
+__pycache__/
+docs/**/STATE-CHANGES.md
