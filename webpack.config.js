@@ -25,7 +25,7 @@ if (process.env.DHIS2_BASE_URL) {
     };
 }
 
-const devServerPort = 8081;
+const devServerPort = Number(process.env.DHIS2_DEV_PORT) || 8081;
 
 let cookie = ""; // Store cookie globally
 async function fetchSessionCookie() {
@@ -74,7 +74,7 @@ module.exports = (env = {}) => {
         output: {
             path: __dirname + "/build",
             filename: "[name]-[contenthash].js",
-            publicPath: isDevBuild ? "http://localhost:8081/" : "./"
+            publicPath: isDevBuild ? "/" : "./"
         },
         module: {
             rules: [
@@ -113,8 +113,12 @@ module.exports = (env = {}) => {
                     { from: "./src/resources/dhis-header-bar.js", to: "resources" }
                 ]
             }),
+            // In dev the app calls the API same-origin ("" base URL) so every
+            // request goes through the dev-server proxy below, which injects
+            // authentication — no CORS whitelisting needed, and credentials
+            // never reach the browser bundle.
             new webpack.DefinePlugin({
-                DHIS_CONFIG: JSON.stringify(isDevBuild ? dhisConfig : {}),
+                DHIS_CONFIG: JSON.stringify(isDevBuild ? { baseUrl: "" } : {}),
             }),
         ],
         devServer: {

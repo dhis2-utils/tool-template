@@ -29,7 +29,8 @@ const formatEndpoint = (endpoint) => {
 
 // Helper function to validate endpoint UID (11 characters, alphanumeric)
 const validateUID = (endpoint) => {
-    const uid = endpoint.split("/").pop();
+    const path = endpoint.split(/[?#]/)[0];
+    const uid = path.split("/").pop();
     return /^[A-Za-z0-9]{11}$/.test(uid);
 };
 
@@ -143,54 +144,44 @@ export const d2Delete = async (endpoint) => {
     }
 };
 
-//Perform a post and the immediately poll the same endpoint for a response
-//Used primarily in the integrity checks API
-export function d2PostThenGet(endpoint) {
-    endpoint = formatEndpoint(endpoint);
-    return new Promise((resolve, reject) => {
-        fetch(baseUrl + endpoint, {
-            method: "POST",
-            headers: getHeaders(),
-        })
-            .then(async response => {
-                if (!response.ok) {
-                    await handleApiError(response);
-                }
-                return response.json();
-            })
-            .then(() => {
-                let tries = 0;
+// Perform a POST (optionally with a JSON body), then poll an endpoint with GET
+// until it returns a non-empty response. Polls the POST endpoint itself unless
+// a separate getEndpoint is given. Rejects if nothing arrives within maxTries.
+// Used primarily with the data integrity checks API.
+export const d2PostThenGet = async (endpoint, body = null, getEndpoint = null, maxTries = 10, intervalMs = 1000) => {
+    try {
+        const postEndpoint = formatEndpoint(endpoint);
+        const pollEndpoint = formatEndpoint(getEndpoint || endpoint);
 
-                function checkForResponse() {
-                    fetch(baseUrl + endpoint, {
-                        method: "GET",
-                        headers: getHeaders(),
-                    })
-                        .then(async response => {
-                            if (!response.ok) {
-                                await handleApiError(response);
-                            }
-                            return response.json();
-                        })
-                        .then(getData => {
-                            if (Object.keys(getData).length > 0 || tries >= 10) {
-                                resolve(getData);
-                            } else {
-                                tries++;
-                                setTimeout(checkForResponse, 1000);
-                            }
-                        })
-                        .catch(error => {
-                            console.error("Error checking for response:", error);
-                            reject(error);
-                        });
-                }
+        let headers = getHeaders();
+        const options = { method: "POST", headers: headers };
+        if (body !== null) {
+            headers.set("Content-Type", "application/json");
+            options.body = JSON.stringify(body);
+        }
+        const postResponse = await fetch(baseUrl + postEndpoint, options);
+        if (!postResponse.ok) {
+            await handleApiError(postResponse);
+        }
 
-                checkForResponse();
-            })
-            .catch(error => {
-                console.error("Error making POST request:", error);
-                reject(error);
+        for (let tries = 0; tries < maxTries; tries++) {
+            const getResponse = await fetch(baseUrl + pollEndpoint, {
+                method: "GET",
+                headers: getHeaders()
             });
-    });
+            if (!getResponse.ok) {
+                await handleApiError(getResponse);
+            }
+            const data = await getResponse.json();
+            if (Object.keys(data).length > 0) {
+                return data;
+            }
+            await new Promise(resolve => setTimeout(resolve, intervalMs));
+        }
+        throw new Error(`Timed out waiting for a response from ${pollEndpoint}`);
+    } catch (error) {
+        console.log("ERROR in POST-then-GET:");
+        console.log(error);
+        throw error;
+    }
 };

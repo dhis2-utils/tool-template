@@ -34,7 +34,7 @@ src/
 - **No framework**: Plain JS with ES modules, direct DOM manipulation
 - **API layer**: All DHIS2 API calls go through `src/js/d2api.js`
 - **Styling**: Plain CSS in `src/css/`, loaded via webpack
-- **DHIS2 integration**: Runs as installed app with relative API base path (`../../..`); dev mode uses proxy
+- **DHIS2 integration**: Runs as installed app with relative API base path (`../../..`); in dev mode all API calls go same-origin through the webpack-dev-server proxy, which injects authentication (no CORS setup needed on the instance)
 
 ## DHIS2 API
 
@@ -44,14 +44,14 @@ All DHIS2 API calls must use the wrapper functions in `src/js/d2api.js`:
 - `d2PostJson("/api/endpoint", body)` — POST with JSON body
 - `d2PutJson("/api/endpoint", body)` — PUT with JSON body (warns if no UID)
 - `d2Delete("/api/endpoint")` — DELETE requests (warns if no UID)
-- `d2PostThenGet(postUrl, body, getUrl)` — POST then poll a GET endpoint
+- `d2PostThenGet(endpoint, body?, getEndpoint?)` — POST (optional JSON body), then poll `getEndpoint` (defaults to the POST endpoint) with GET until it returns a non-empty response; rejects on timeout after ~10 s
 
 The `formatEndpoint` helper normalizes paths, so `/api/foo`, `api/foo`, and `/foo` all resolve correctly.
 
 ## Build & Dev
 
 - `yarn install` — install dependencies
-- `yarn start` — start dev server on port 8081, proxying to DHIS2
+- `yarn start` — start dev server on port 8081 (override with `DHIS2_DEV_PORT` in `.env`), proxying to DHIS2
 - `yarn run build` — build to `build/` directory
 - `yarn run zip` — build and zip for DHIS2 upload to `compiled/`
 - `yarn run lint` — run ESLint
@@ -65,6 +65,7 @@ DHIS2_BASE_URL=http://localhost:8080/dhis
 DHIS2_API_TOKEN=<your_token>        # Personal Access Token (DHIS2 2.38+, recommended)
 DHIS2_USERNAME=<your_username>      # Basic Auth fallback
 DHIS2_PASSWORD=<your_password>
+DHIS2_DEV_PORT=<port>               # Optional: dev-server port (default 8081)
 ```
 
 ## Scaffolding a New Tool
