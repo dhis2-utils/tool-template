@@ -11,7 +11,7 @@ Verified against DHIS2 2.40–2.43 (July 2026). On 2.41 and older the bundled le
 
 ## Requirements
 
-- Node.js >= 18 and yarn
+- Node.js >= 20.19 and yarn
 - The `zip` command-line utility (for `yarn run zip`; preinstalled on macOS/Linux)
 
 ## Getting started
@@ -65,7 +65,7 @@ This lints, builds to `build/`, and packages `compiled/<name>.zip`.
 
 ### Install in DHIS2
 
-Upload the zip in the **App Management** app (or `POST /api/apps`). The app appears in the app menu under the name from `package.json`.
+Upload the zip in the **App Management** app (or `POST /api/apps`). The app appears in the app menu under the `manifest.webapp.name` value from `package.json`.
 
 ## Creating a new tool from this template
 

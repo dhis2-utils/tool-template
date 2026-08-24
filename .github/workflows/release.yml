@@ -1,33 +1,59 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+    push:
+        tags:
+            - 'v*.*.*'
 
 permissions:
-  contents: write
+    contents: write
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-    steps:
-      - uses: actions/checkout@v4
+            - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+              with:
+                  node-version: 22
+                  cache: yarn
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: yarn
+            - name: Verify tag matches package.json version
+              run: |
+                  VERSION=$(node -p "require('./package.json').version")
+                  TAG="${GITHUB_REF_NAME#v}"
+                  if [ "$VERSION" != "$TAG" ]; then
+                    echo "Tag $GITHUB_REF_NAME does not match package.json version $VERSION" >&2
+                    exit 1
+                  fi
 
-      - name: Install
-        run: yarn install --frozen-lockfile
+            - name: Install dependencies
+              # --ignore-scripts: dependency lifecycle scripts are not needed to
+              # build this app and running them would execute third-party code in CI.
+              run: yarn install --frozen-lockfile --ignore-scripts
 
-      - name: Build
-        run: yarn run zip
+            - name: Build
+              run: yarn run zip
 
-      - name: Create release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: compiled/*.zip
-          generate_release_notes: true
+            - name: Extract changelog section
+              run: |
+                  VERSION="${GITHUB_REF_NAME#v}"
+                  awk -v ver="$VERSION" '
+                    $0 ~ "^## \\[?" ver "\\]?" { found = 1; next }
+                    found && /^## / { exit }
+                    found { print }
+                  ' CHANGELOG.md > release-notes.md
+                  if [ ! -s release-notes.md ]; then
+                    echo "No CHANGELOG.md section found for $VERSION" >&2
+                    exit 1
+                  fi
+
+            - name: Create GitHub release
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  gh release create "$GITHUB_REF_NAME" \
+                    --title "$GITHUB_REF_NAME" \
+                    --notes-file release-notes.md \
+                    compiled/*.zip
