@@ -1,9 +1,13 @@
 # DHIS2 Tool Template
 
-Template for simple, vanilla-JavaScript DHIS2 tools — no React, no App Platform.
-
+> ![Maturity: Validated](https://img.shields.io/badge/maturity-Validated-yellow)  
+> Intended use: template for simple, vanilla-JavaScript DHIS2 tools (no React)
+> Maintainers: HISP Centre implementation team.
+>
 > **WARNING**
 > Tools built from this template are intended to be used by system administrators to perform specific tasks; they are not intended for end users. They are available as DHIS2 apps, but have not been through the same rigorous testing as normal core apps. They should be used with care, and always tested in a development environment.
+
+**Note**: [DHIS2 App platform](https://developers.dhis2.org/docs/app-platform/getting-started) is the recommended starting point for DHIS2 apps.
 
 ## Supported DHIS2 versions
 
