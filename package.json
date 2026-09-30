@@ -1,9 +1,9 @@
 {
   "name": "tool-template",
-  "description": "Template for basic DHIS2 tools",
-  "version": "0.4.0",
+  "description": "Template for simple vanilla-JavaScript DHIS2 tools",
+  "version": "1.0.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=20.19.0"
   },
   "dependencies": {},
   "resolutions": {
@@ -35,6 +35,7 @@
     "zip": "rm -rf compiled && yarn build && mkdir compiled && cd build && zip -r ../compiled/$npm_package_name.zip *"
   },
   "manifest.webapp": {
+    "name": "Tool Template",
     "developer": {
       "company": "HISP Centre - University of Oslo",
       "email": "dev@dhis2.org",

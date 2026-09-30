@@ -11,4 +11,3 @@ d2auth.json
 package-lock.json
 .DS_Store
 __pycache__/
-docs/**/STATE-CHANGES.md

@@ -1,4 +1,4 @@
-const dhisDevConfig = DHIS_CONFIG;  
+const dhisDevConfig = DHIS_CONFIG;
 const isDev = "baseUrl" in dhisDevConfig;
 const baseUrl = isDev ? dhisDevConfig.baseUrl : "../../..";
 
